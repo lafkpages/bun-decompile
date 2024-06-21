@@ -2,7 +2,7 @@ import { extractBundledFiles } from "..";
 import { test, expect } from "bun:test";
 
 const dummy = Bun.file("dist/dummy");
-const dummyData = Buffer.from(await dummy.arrayBuffer());
+const dummyData = await dummy.arrayBuffer();
 
 test("extractBundledFiles with dummy executable", () => {
   const bundledFiles = extractBundledFiles(dummyData);
