@@ -1,0 +1,3 @@
+[loader]
+".txt" = "text"
+".bin" = "file"
