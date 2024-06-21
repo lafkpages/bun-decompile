@@ -41,31 +41,30 @@ assert.equal(trailer, BUN_TRAILER, "Invalid trailer");
 
 const modulesStart = compiledBinaryData.length - (offsetByteCount + 48);
 const modulesEnd = modulesStart + modulesPtrOffset;
-const modulesData = compiledBinaryData.toString(
-  "utf-8",
-  modulesStart,
-  modulesEnd
-);
+const modulesData = compiledBinaryData.subarray(modulesStart, modulesEnd);
 
 const modulesMetadataStart = modulesEnd;
 
 interface Module {
   path: string;
-  contents: string;
+  contents: Buffer;
 }
 
 const modules: Module[] = [];
 let currentOffset = 0;
 for (let i = 0; i < modulesPtrLength / 32; i++) {
-  const pathLength = compiledBinaryData.readUint32LE(
-    modulesMetadataStart + i * 32 + 4
-  );
+  const modulesMetadataOffset = modulesMetadataStart + i * 32;
+  const pathLength = compiledBinaryData.readUint32LE(modulesMetadataOffset + 4);
   const contentsLength = compiledBinaryData.readUint32LE(
-    modulesMetadataStart + i * 32 + 12
+    modulesMetadataOffset + 12
   );
 
-  const path = modulesData.slice(currentOffset, currentOffset + pathLength);
-  const contents = modulesData.slice(
+  const path = modulesData.toString(
+    "utf-8",
+    currentOffset,
+    currentOffset + pathLength
+  );
+  const contents = modulesData.subarray(
     currentOffset + pathLength,
     currentOffset + pathLength + contentsLength
   );
