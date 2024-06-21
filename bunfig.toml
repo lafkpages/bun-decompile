@@ -1,3 +1,6 @@
 [loader]
 ".txt" = "text"
 ".bin" = "file"
+
+[test]
+coverage = true
