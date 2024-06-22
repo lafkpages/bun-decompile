@@ -62,6 +62,11 @@
 
 <h1>bun-decompile</h1>
 
+<p>
+  Extracts JavaScript sources from an executable file generated via <code>bun build --compile</code
+  >.
+</p>
+
 <input type="file" id="compiled-binary-upload" bind:files />
 
 <button on:click={decompile} disabled={!file}>Decompile</button>
