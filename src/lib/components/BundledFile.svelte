@@ -2,10 +2,8 @@
   import type { BundledFile } from "$lib";
 
   import { fileTypeFromBuffer } from "@sgtpooki/file-type";
-  import { Highlight } from "svelte-highlight";
-  import typescript from "svelte-highlight/languages/typescript";
 
-  import "svelte-highlight/styles/github.css";
+  import CodeView from "./CodeView.svelte";
 
   export let bundledFile: BundledFile;
   $: fileTypePromise = fileTypeFromBuffer(bundledFile.contents).then((fileType) => {
@@ -32,6 +30,6 @@
   {:else if fileType}
     <p>File MIME: {fileType.mime}</p>
   {:else}
-    <Highlight code={decoder.decode(bundledFile.contents)} language={typescript} />
+    <CodeView code={decoder.decode(bundledFile.contents)} />
   {/if}
 {/await}
