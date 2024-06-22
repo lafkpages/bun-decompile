@@ -3,6 +3,8 @@
 
   import { onMount } from "svelte";
 
+  import JSZip from "jszip";
+
   import { extractBundledFiles } from "$lib";
   import BundledFile from "$lib/components/BundledFile.svelte";
 
@@ -13,6 +15,8 @@
 
   let bundledFiles: TBundledFile[] = [];
 
+  let exportBundleDownloadLink: HTMLAnchorElement;
+
   function decompile() {
     if (!file) {
       alert("Please select a file");
@@ -20,6 +24,24 @@
     }
 
     reader.readAsArrayBuffer(file);
+  }
+
+  async function exportBundle() {
+    if (!bundledFiles.length) {
+      alert("No bundled files to export");
+      return;
+    }
+
+    const zip = new JSZip();
+
+    for (const bundledFile of bundledFiles) {
+      zip.file(bundledFile.path, bundledFile.contents);
+    }
+
+    const zipData = await zip.generateAsync({ type: "base64" });
+
+    exportBundleDownloadLink.href = `data:application/zip;base64,${zipData}`;
+    exportBundleDownloadLink.click();
   }
 
   onMount(() => {
@@ -41,6 +63,11 @@
 <input type="file" id="compiled-binary-upload" bind:files />
 
 <button on:click={decompile} disabled={!file}>Decompile</button>
+<button on:click={exportBundle} disabled={!bundledFiles.length}>Export bundle</button>
+
+<a href="#exportBundle" download="bundle.zip" bind:this={exportBundleDownloadLink}>
+  Download exported bundle
+</a>
 
 <hr />
 
@@ -51,3 +78,9 @@
     </li>
   {/each}
 </ul>
+
+<style>
+  a {
+    display: none;
+  }
+</style>
