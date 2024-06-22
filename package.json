@@ -28,6 +28,8 @@
     "build-dummy": "bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy"
   },
   "trustedDependencies": [
+    "@sveltejs/kit",
+    "esbuild",
     "svelte-preprocess"
   ],
   "type": "module"
