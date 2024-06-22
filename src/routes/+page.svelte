@@ -5,7 +5,7 @@
 
   import JSZip from "jszip";
 
-  import { extractBundledFiles } from "$lib";
+  import { extractBundledFiles, removeBunfsRootFromPath } from "$lib";
   import BundledFile from "$lib/components/BundledFile.svelte";
 
   let files: FileList;
@@ -37,7 +37,9 @@
     const zip = new JSZip();
 
     for (const bundledFile of bundledFiles) {
-      zip.file(bundledFile.path, bundledFile.contents);
+      const path = removeBunfsRoot ? removeBunfsRootFromPath(bundledFile.path) : bundledFile.path;
+
+      zip.file(path, bundledFile.contents);
     }
 
     const zipData = await zip.generateAsync({ type: "base64" });
