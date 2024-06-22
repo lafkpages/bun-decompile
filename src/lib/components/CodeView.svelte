@@ -27,7 +27,8 @@
   {:then formattedCode}
     <Highlight code={formattedCode} language={typescriptHighlighting} />
   {:catch error}
-    <p>Error formatting code: {error.message}</p>
+    <p>Error formatting code:</p>
+    <pre><code>{error.message}</code></pre>
   {/await}
 {:else}
   <Highlight {code} language={typescriptHighlighting} />
