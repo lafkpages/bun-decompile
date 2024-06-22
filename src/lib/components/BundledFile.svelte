@@ -2,6 +2,10 @@
   import type { BundledFile } from "$lib";
 
   import { fileTypeFromBuffer } from "@sgtpooki/file-type";
+  import { Highlight } from "svelte-highlight";
+  import typescript from "svelte-highlight/languages/typescript";
+
+  import "svelte-highlight/styles/github.css";
 
   export let bundledFile: BundledFile;
   $: fileTypePromise = fileTypeFromBuffer(bundledFile.contents).then((fileType) => {
@@ -28,14 +32,6 @@
   {:else if fileType}
     <p>File MIME: {fileType.mime}</p>
   {:else}
-    <p>Unknown file type</p>
-    <textarea readonly>{decoder.decode(bundledFile.contents)}</textarea>
+    <Highlight code={decoder.decode(bundledFile.contents)} language={typescript} />
   {/if}
 {/await}
-
-<style>
-  textarea {
-    width: 100%;
-    height: 24em;
-  }
-</style>
