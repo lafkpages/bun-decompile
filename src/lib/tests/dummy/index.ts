@@ -1,3 +1,6 @@
+/// <reference path="../imports.d.ts" />
+
+import favicon from "../../../../static/favicon.png";
 import rawPasswordOne from "./password1.txt";
 import rawPasswordTwo from "./password2.bin";
 
@@ -21,3 +24,7 @@ for await (const guess of console) {
   }
   console.log("Access denied");
 }
+
+// Print something about the favicon so that it's included in the bundle
+const faviconFile = Bun.file(favicon);
+console.log("Favicon is", faviconFile.size, "bytes");

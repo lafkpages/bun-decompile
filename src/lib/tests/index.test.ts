@@ -8,10 +8,17 @@ const dummyData = await dummy.arrayBuffer();
 test("extractBundledFiles with dummy executable", () => {
   const bundledFiles = extractBundledFiles(dummyData);
 
-  expect(bundledFiles).toHaveLength(2);
+  expect(bundledFiles).toHaveLength(3);
 
+  // The first file should be the dummy executable itself
   expect(bundledFiles[0].path).toEndWith("/dummy");
-  expect(bundledFiles[1].path).toEndWith(".bin");
+
+  // After that, the rest of the files will be in an unknown order
+  // so we'll sort them by path to make the test deterministic
+  const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
+
+  expect(restSorted[0].path).toEndWith(".png");
+  expect(restSorted[1].path).toEndWith(".bin");
 });
 
 test("extractBundledFiles with a non-executable should throw InvalidTrailerError", () => {

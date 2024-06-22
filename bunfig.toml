@@ -1,6 +1,7 @@
 [loader]
 ".txt" = "text"
 ".bin" = "file"
+".png" = "file"
 
 [test]
 coverage = true
