@@ -18,7 +18,7 @@ export class InvalidTrailerError extends Error {
   }
 }
 
-export class BotalByteCountMismatchError extends Error {
+export class TotalByteCountMismatchError extends Error {
 	constructor() {
 		
 		super(
@@ -52,7 +52,7 @@ export function extractBundledFiles(compiledBinaryData: DataView | ArrayBuffer) 
 
   const totalByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 8, true);
   if (compiledBinaryData.byteLength !== totalByteCount) {
-    throw new BotalByteCountMismatchError();
+    throw new TotalByteCountMismatchError();
   }
 
   const offsetByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 48, true);
