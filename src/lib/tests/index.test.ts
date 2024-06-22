@@ -1,7 +1,8 @@
-import { extractBundledFiles } from "..";
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 
-const dummy = Bun.file("dist/dummy");
+import { extractBundledFiles } from "..";
+
+const dummy = Bun.file("src/lib/tests/dummy/dummy");
 const dummyData = await dummy.arrayBuffer();
 
 test("extractBundledFiles with dummy executable", () => {

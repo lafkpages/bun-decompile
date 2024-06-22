@@ -1,0 +1,22 @@
+{
+  "plugins": ["prettier-plugin-svelte", "@ianvs/prettier-plugin-sort-imports"],
+  "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }],
+
+  "importOrderTypeScriptVersion": "5.4.2",
+  "importOrder": [
+    "<TYPES>^[.]",
+    "<TYPES>",
+    "",
+    "^svelte$",
+    "^svelte/",
+    "^@sveltejs/",
+    "",
+    "<BUILTIN_MODULES>",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^[.$]"
+  ],
+
+  "printWidth": 100
+}

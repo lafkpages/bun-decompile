@@ -9,8 +9,7 @@ import rawPasswordTwo from "./password2.bin";
 // so it should be included as a separate file in
 // the binary bundle.
 
-const password =
-  rawPasswordOne.trim() + (await Bun.file(rawPasswordTwo).text()).trim();
+const password = rawPasswordOne.trim() + (await Bun.file(rawPasswordTwo).text()).trim();
 
 // This comment is a test
 // ^ I wanted to see if comments get included in the compiled binary

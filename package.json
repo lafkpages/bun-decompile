@@ -1,14 +1,34 @@
 {
   "name": "bun-decompile",
-  "module": "src/index.ts",
+  "version": "0.0.1",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@sgtpooki/file-type": "^1.0.1",
+    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@types/bun": "^1.1.5",
+    "prettier": "^3.1.1",
+    "prettier-plugin-svelte": "^3.1.2",
+    "svelte": "^4.2.7",
+    "svelte-check": "^3.6.0",
+    "tslib": "^2.4.1",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.3"
   },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
+  "private": true,
   "scripts": {
-    "build-dummy": "bun build src/tests/dummy/index.ts --compile --outfile dist/dummy"
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "build-dummy": "bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy"
   },
+  "trustedDependencies": [
+    "svelte-preprocess"
+  ],
   "type": "module"
 }
