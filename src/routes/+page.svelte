@@ -54,8 +54,6 @@
       }
 
       bundledFiles = extractBundledFiles(reader.result);
-
-      console.log(bundledFiles);
     };
   });
 </script>

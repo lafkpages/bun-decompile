@@ -8,8 +8,6 @@
 
   export let bundledFile: BundledFile;
   $: fileTypePromise = fileTypeFromBuffer(bundledFile.contents).then((fileType) => {
-    console.debug(fileType);
-
     if (fileType?.mime.startsWith("image/")) {
       imageSrc = URL.createObjectURL(new Blob([bundledFile.contents], { type: fileType.mime }));
     }
