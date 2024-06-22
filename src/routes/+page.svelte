@@ -15,6 +15,8 @@
 
   let bundledFiles: TBundledFile[] = [];
 
+  let removeBunfsRoot = true;
+
   let exportBundleDownloadLink: HTMLAnchorElement;
 
   function decompile() {
@@ -69,12 +71,18 @@
   Download exported bundle
 </a>
 
+<br />
+<br />
+
+<label for="remove-bunfs-root">Remove bunfs root</label>
+<input type="checkbox" id="remove-bunfs-root" bind:checked={removeBunfsRoot} />
+
 <hr />
 
 <ul>
   {#each bundledFiles as bundledFile}
     <li>
-      <BundledFile {bundledFile} />
+      <BundledFile {bundledFile} {removeBunfsRoot} />
     </li>
   {/each}
 </ul>

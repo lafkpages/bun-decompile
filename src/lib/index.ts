@@ -1,4 +1,4 @@
-import { BUN_TRAILER } from "./constants";
+import { BUNFS_ROOT, BUN_TRAILER } from "./constants";
 
 export interface BundledFile {
   path: string;
@@ -84,4 +84,11 @@ export function extractBundledFiles(compiledBinaryData: DataView | ArrayBuffer) 
   }
 
   return bundledFiles;
+}
+
+export function removeBunfsRootFromPath(path: string) {
+  if (path.startsWith(BUNFS_ROOT)) {
+    return path.slice(BUNFS_ROOT.length);
+  }
+  return path;
 }
