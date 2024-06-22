@@ -1,4 +1,4 @@
-import { BUNFS_ROOT, BUN_TRAILER } from "./constants";
+import { BUN_TRAILER, BUNFS_ROOT } from "./constants";
 
 export interface BundledFile {
   path: string;
