@@ -39,12 +39,30 @@ test("extractBundledFiles with dummy executable", () => {
   // After that, the rest of the files will be in an unknown order
   // so we'll sort them by path to make the test deterministic
   const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-  expect(restSorted[0].path).toMatch(/favicon.*\.png$/);
-  expect(restSorted[1].path).toMatch(/password2.*\.bin$/);
+  expect(restSorted[0].path).toMatch(/\/favicon.*\.png$/);
+  expect(restSorted[1].path).toMatch(/\/password2.*\.bin$/);
 
   // Simple tests for removeBunfsRootFromPath
   expect(removeBunfsRootFromPath(restSorted[0].path)).toMatch(/^\/favicon.*\.png$/);
   expect(removeBunfsRootFromPath(restSorted[1].path)).toMatch(/^\/password2.*\.bin$/);
+});
+
+test("extractBundledFiles with dummy executable removing leading slash", () => {
+  const bundledFiles = extractBundledFiles(dummyData, {
+    removeLeadingSlash: true,
+  });
+
+  expect(bundledFiles).toHaveLength(3);
+
+  // The first file should be the dummy executable itself
+  expect(bundledFiles[0].path).toEndWith("/dummy");
+  expect(bundledFiles[0].path).not.toStartWith("/");
+
+  // After that, the rest of the files will be in an unknown order
+  // so we'll sort them by path to make the test deterministic
+  const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
+  expect(restSorted[0].path).toMatch(/\/favicon.*\.png$/);
+  expect(restSorted[1].path).toMatch(/\/password2.*\.bin$/);
 });
 
 test("extractBundledFiles with a non-executable should throw InvalidTrailerError", () => {
