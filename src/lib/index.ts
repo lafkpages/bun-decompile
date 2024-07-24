@@ -105,7 +105,7 @@ export function extractBundledFiles(
       throw new InvalidExecutableError("Invalid path in bundled file in executable");
     }
     if (options.removeLeadingSlash) {
-      path = path.slice(1);
+      path = removeLeadingSlash(path);
     }
 
     const contents = modulesData.slice(
@@ -129,6 +129,10 @@ export function removeBunfsRootFromPath(path: string) {
     return path.slice(BUNFS_ROOT_OLD.length);
   }
   throw new Error("Path does not start with Bun-fs root");
+}
+
+export function removeLeadingSlash(path: string) {
+  return path.replace(/^\/?(?:\.\/)?/, "");
 }
 
 export interface BunVersion {
