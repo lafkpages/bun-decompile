@@ -3,7 +3,7 @@ import type { BunFile } from "bun";
 import { rm } from "node:fs/promises";
 
 import { $ } from "bun";
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 
 import {
   extractBundledFiles,
@@ -14,12 +14,17 @@ import {
 
 let dummy: BunFile;
 let dummyData: ArrayBuffer;
+
 beforeAll(async () => {
   // Run the Bun bundler to compile the dummy executable
   await $`bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy`;
 
-  // Read the dummy executable
+  // Get a reference to the dummy executable file
   dummy = Bun.file("src/lib/tests/dummy/dummy");
+});
+
+beforeEach(async () => {
+  // Re-read the executable data from the file before each test
   dummyData = await dummy.arrayBuffer();
 });
 
@@ -34,14 +39,16 @@ test("extractBundledFiles with dummy executable", () => {
   // After that, the rest of the files will be in an unknown order
   // so we'll sort them by path to make the test deterministic
   const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-  expect(restSorted[0].path).toEndWith(".png");
-  expect(restSorted[1].path).toEndWith(".bin");
+  expect(restSorted[0].path).toMatch(/favicon.*\.png$/);
+  expect(restSorted[1].path).toMatch(/password2.*\.bin$/);
 
-  expect(removeBunfsRootFromPath(restSorted[0].path)).toMatch(/^\/favicon.*\.png/);
-  expect(removeBunfsRootFromPath(restSorted[1].path)).toMatch(/^\/password2.*\.bin/);
+  // Simple tests for removeBunfsRootFromPath
+  expect(removeBunfsRootFromPath(restSorted[0].path)).toMatch(/^\/favicon.*\.png$/);
+  expect(removeBunfsRootFromPath(restSorted[1].path)).toMatch(/^\/password2.*\.bin$/);
 });
 
 test("extractBundledFiles with a non-executable should throw InvalidTrailerError", () => {
+  // Generate some binary data which is not a Bun-compiled executable
   const nonExecutable = new ArrayBuffer(8);
   const view = new DataView(nonExecutable);
   view.setUint32(0, 0xdeadbeef, true);
