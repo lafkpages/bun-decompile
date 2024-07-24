@@ -1,4 +1,4 @@
-import { BUN_TRAILER, BUNFS_ROOT } from "./constants";
+import { BUN_TRAILER, BUN_VERSION_MATCH, BUNFS_ROOT } from "./constants";
 
 export interface BundledFile {
   path: string;
@@ -120,4 +120,46 @@ export function removeBunfsRootFromPath(path: string) {
     return path.slice(BUNFS_ROOT.length);
   }
   throw new Error("Path does not start with Bun-fs root");
+}
+
+export function getExecutableVersion(data: Uint8Array | ArrayBuffer) {
+  if (data instanceof ArrayBuffer) {
+    data = new Uint8Array(data);
+  }
+
+  const versionIndex = data.findIndex((_, index) => {
+    for (let i = 0; i < BUN_VERSION_MATCH.length; i++) {
+      if (data[index + i] !== BUN_VERSION_MATCH.charCodeAt(i)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  if (versionIndex === -1) {
+    throw new InvalidExecutableError("Could not find Bun version in executable");
+  }
+
+  const versionEndIndex = data.indexOf(27, versionIndex + BUN_VERSION_MATCH.length);
+
+  if (versionEndIndex <= 0) {
+    throw new InvalidExecutableError("Could not find Bun version end in executable");
+  }
+
+  const decoder = new TextDecoder();
+  const versionString = decoder.decode(
+    data.slice(versionIndex + BUN_VERSION_MATCH.length, versionEndIndex),
+  );
+
+  const [, version, revision] = versionString.match(/^(.+) \((.+)\)$/) ?? [];
+
+  if (!version) {
+    throw new InvalidExecutableError("Could not match Bun version in executable");
+  }
+
+  return {
+    version,
+    revision,
+  };
 }
