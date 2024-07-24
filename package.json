@@ -29,7 +29,6 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check .",
     "format": "prettier --write .",
-    "build-dummy": "bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy",
     "optimise-svg": "svgo -f static"
   },
   "trustedDependencies": [

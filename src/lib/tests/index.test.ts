@@ -1,9 +1,27 @@
-import { expect, test } from "bun:test";
+import type { BunFile } from "bun";
 
-import { extractBundledFiles, InvalidTrailerError, TotalByteCountMismatchError } from "..";
+import { rm } from "node:fs/promises";
 
-const dummy = Bun.file("src/lib/tests/dummy/dummy");
-const dummyData = await dummy.arrayBuffer();
+import { $ } from "bun";
+import { afterAll, beforeAll, expect, test } from "bun:test";
+
+import {
+  extractBundledFiles,
+  InvalidTrailerError,
+  removeBunfsRootFromPath,
+  TotalByteCountMismatchError,
+} from "..";
+
+let dummy: BunFile;
+let dummyData: ArrayBuffer;
+beforeAll(async () => {
+  // Run the Bun bundler to compile the dummy executable
+  await $`bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy`;
+
+  // Read the dummy executable
+  dummy = Bun.file("src/lib/tests/dummy/dummy");
+  dummyData = await dummy.arrayBuffer();
+});
 
 test("extractBundledFiles with dummy executable", () => {
   const bundledFiles = extractBundledFiles(dummyData);
@@ -16,9 +34,11 @@ test("extractBundledFiles with dummy executable", () => {
   // After that, the rest of the files will be in an unknown order
   // so we'll sort them by path to make the test deterministic
   const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-
   expect(restSorted[0].path).toEndWith(".png");
   expect(restSorted[1].path).toEndWith(".bin");
+
+  expect(removeBunfsRootFromPath(restSorted[0].path)).toMatch(/^\/favicon.*\.png/);
+  expect(removeBunfsRootFromPath(restSorted[1].path)).toMatch(/^\/password2.*\.bin/);
 });
 
 test("extractBundledFiles with a non-executable should throw InvalidTrailerError", () => {
@@ -37,4 +57,8 @@ test("extractBundledFiles with a corrupt executable should throw TotalByteCountM
   view.setUint32(dummyData.byteLength - 8, 0xdeadbeef, true);
 
   expect(() => extractBundledFiles(dummyData)).toThrowError(TotalByteCountMismatchError);
+});
+
+afterAll(async () => {
+  await rm(dummy.name!);
 });
