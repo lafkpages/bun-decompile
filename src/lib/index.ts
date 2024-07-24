@@ -30,6 +30,7 @@ export class TotalByteCountMismatchError extends InvalidExecutableError {
 }
 
 export interface ExtractBundledFilesOptions {
+  removeBunfsRoot?: boolean;
   removeLeadingSlash?: boolean;
 }
 
@@ -38,6 +39,7 @@ export function extractBundledFiles(
   options: ExtractBundledFilesOptions = {},
 ) {
   options = {
+    removeBunfsRoot: false,
     removeLeadingSlash: false,
     ...options,
   };
@@ -70,7 +72,7 @@ export function extractBundledFiles(
   const offsetByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 48, true);
 
   // Not sure what this is for
-  const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
+  // const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
 
   const modulesPtrOffset = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 40, true);
 
@@ -92,6 +94,9 @@ export function extractBundledFiles(
     let path = decoder.decode(modulesData.slice(currentOffset, currentOffset + pathLength));
     if (path[0] !== "/") {
       throw new InvalidExecutableError("Invalid path in bundled file in executable");
+    }
+    if (options.removeBunfsRoot) {
+      path = removeBunfsRootFromPath(path);
     }
     if (options.removeLeadingSlash) {
       path = path.slice(1);
