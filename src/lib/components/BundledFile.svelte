@@ -4,7 +4,6 @@
   import { fileTypeFromBuffer } from "@sgtpooki/file-type";
 
   import CodeView from "./CodeView.svelte";
-  import { removeBunfsRootFromPath } from "$lib";
 
   export let bundledFile: BundledFile;
   $: fileTypePromise = fileTypeFromBuffer(bundledFile.contents).then((fileType) => {
@@ -15,20 +14,13 @@
     return fileType;
   });
 
-  export let removeBunfsRoot = false;
-
   let imageSrc: string | null = null;
 
   const decoder = new TextDecoder();
 </script>
 
-<h2>
-  {#if removeBunfsRoot}
-    {removeBunfsRootFromPath(bundledFile.path).slice(1)}
-  {:else}
-    {bundledFile.path.slice(1)}
-  {/if}
-</h2>
+<h2>{bundledFile.path}</h2>
+
 {#await fileTypePromise}
   <p>Determining file type</p>
 {:then fileType}

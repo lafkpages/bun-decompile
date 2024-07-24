@@ -16,6 +16,7 @@
   let bundledFiles: TBundledFile[] = [];
 
   let removeBunfsRoot = true;
+  let removeLeadingSlash = true;
 
   let exportBundleDownloadLink: HTMLAnchorElement;
 
@@ -37,9 +38,7 @@
     const zip = new JSZip();
 
     for (const bundledFile of bundledFiles) {
-      const path = removeBunfsRoot ? removeBunfsRootFromPath(bundledFile.path) : bundledFile.path;
-
-      zip.file(path, bundledFile.contents);
+      zip.file(bundledFile.path, bundledFile.contents);
     }
 
     const zipData = await zip.generateAsync({ type: "base64" });
@@ -55,7 +54,10 @@
         return;
       }
 
-      bundledFiles = extractBundledFiles(reader.result);
+      bundledFiles = extractBundledFiles(reader.result, {
+        removeBunfsRoot,
+        removeLeadingSlash,
+      });
     };
   });
 </script>
@@ -79,15 +81,20 @@
 <br />
 <br />
 
-<label for="remove-bunfs-root">Remove bunfs root</label>
+<label for="remove-bunfs-root">Remove Bun-fs root</label>
 <input type="checkbox" id="remove-bunfs-root" bind:checked={removeBunfsRoot} />
+
+<br />
+
+<label for="remove-leading-slash">Remove leading slash</label>
+<input type="checkbox" id="remove-leading-slash" bind:checked={removeLeadingSlash} />
 
 <hr />
 
 <ul>
   {#each bundledFiles as bundledFile}
     <li>
-      <BundledFile {bundledFile} {removeBunfsRoot} />
+      <BundledFile {bundledFile} />
     </li>
   {/each}
 </ul>
