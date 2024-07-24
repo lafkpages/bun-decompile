@@ -1,4 +1,4 @@
-import { BUN_TRAILER, BUN_VERSION_MATCH, BUNFS_ROOT } from "./constants";
+import { BUN_TRAILER, BUN_VERSION_MATCH, BUNFS_ROOT, BUNFS_ROOT_OLD } from "./constants";
 
 export interface BundledFile {
   path: string;
@@ -43,6 +43,12 @@ export function extractBundledFiles(
     removeLeadingSlash: true,
     ...options,
   };
+
+  if (!options.removeBunfsRoot && options.removeLeadingSlash) {
+    throw new Error(
+      "Cannot remove leading slash without removing Bun-fs root from bundled file paths",
+    );
+  }
 
   if (compiledBinaryData instanceof ArrayBuffer) {
     compiledBinaryData = new DataView(compiledBinaryData);
@@ -92,11 +98,11 @@ export function extractBundledFiles(
     const contentsLength = compiledBinaryData.getUint32(modulesMetadataOffset + 12, true);
 
     let path = decoder.decode(modulesData.slice(currentOffset, currentOffset + pathLength));
-    if (path[0] !== "/") {
-      throw new InvalidExecutableError("Invalid path in bundled file in executable");
-    }
     if (options.removeBunfsRoot) {
       path = removeBunfsRootFromPath(path);
+    }
+    if (path[0] !== "/") {
+      throw new InvalidExecutableError("Invalid path in bundled file in executable");
     }
     if (options.removeLeadingSlash) {
       path = path.slice(1);
@@ -118,6 +124,9 @@ export function extractBundledFiles(
 export function removeBunfsRootFromPath(path: string) {
   if (path.startsWith(BUNFS_ROOT)) {
     return path.slice(BUNFS_ROOT.length);
+  }
+  if (path.startsWith(BUNFS_ROOT_OLD)) {
+    return path.slice(BUNFS_ROOT_OLD.length);
   }
   throw new Error("Path does not start with Bun-fs root");
 }
