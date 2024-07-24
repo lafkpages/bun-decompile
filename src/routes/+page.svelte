@@ -104,7 +104,12 @@
 <p>
   Bun version:
   {#if bunVersion}
-    <code>{bunVersion.version}</code> (<code>{bunVersion.revision}</code>)
+    <a href="https://github.com/oven-sh/bun/releases/bun-v{bunVersion.version}">
+      <code>{bunVersion.version}</code>
+    </a>
+    (<a href="https://github.com/oven-sh/bun/commit/{bunVersion.revision}"
+      ><code>{bunVersion.revision}</code></a
+    >)
   {:else}
     unknown
   {/if}
