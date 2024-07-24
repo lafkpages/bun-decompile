@@ -39,8 +39,8 @@ export function extractBundledFiles(
   options: ExtractBundledFilesOptions = {},
 ) {
   options = {
-    removeBunfsRoot: false,
-    removeLeadingSlash: false,
+    removeBunfsRoot: true,
+    removeLeadingSlash: true,
     ...options,
   };
 

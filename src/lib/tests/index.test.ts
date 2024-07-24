@@ -31,7 +31,10 @@ beforeEach(async () => {
 });
 
 test("extractBundledFiles with dummy executable", () => {
-  const bundledFiles = extractBundledFiles(dummyData);
+  const bundledFiles = extractBundledFiles(dummyData, {
+    removeBunfsRoot: false,
+    removeLeadingSlash: false,
+  });
 
   // There should be exactly three bundled files
   expect(bundledFiles).toHaveLength(3);
@@ -58,6 +61,7 @@ test("extractBundledFiles with dummy executable", () => {
 
 test("extractBundledFiles with dummy executable removing leading slash", () => {
   const bundledFiles = extractBundledFiles(dummyData, {
+    removeBunfsRoot: false,
     removeLeadingSlash: true,
   });
 
