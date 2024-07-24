@@ -1,4 +1,10 @@
-import { BUN_TRAILER, BUN_VERSION_MATCH, BUNFS_ROOT, BUNFS_ROOT_OLD } from "./constants";
+import {
+  BUN_TRAILER,
+  BUN_VERSION_MATCH,
+  BUN_VERSION_MATCH_OLD,
+  BUNFS_ROOT,
+  BUNFS_ROOT_OLD,
+} from "./constants";
 
 export interface BundledFile {
   path: string;
@@ -26,6 +32,13 @@ export class TotalByteCountMismatchError extends InvalidExecutableError {
   constructor() {
     super("Executable byte count mismatch");
     this.name = "TotalByteCountMismatchError";
+  }
+}
+
+export class VersionNotFoundError extends InvalidExecutableError {
+  constructor() {
+    super("Version not found in executable");
+    this.name = "VersionNotFoundError";
   }
 }
 
@@ -140,11 +153,7 @@ export interface BunVersion {
   revision: string;
 }
 
-export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion {
-  if (data instanceof ArrayBuffer) {
-    data = new Uint8Array(data);
-  }
-
+function getExecutableVersionNew(data: Uint8Array): BunVersion {
   const versionIndex = data.findIndex((_, index) => {
     for (let i = 0; i < BUN_VERSION_MATCH.length; i++) {
       if (data[index + i] !== BUN_VERSION_MATCH.charCodeAt(i)) {
@@ -156,13 +165,13 @@ export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion
   });
 
   if (versionIndex === -1) {
-    throw new InvalidExecutableError("Could not find Bun version in executable");
+    throw new VersionNotFoundError();
   }
 
   const versionEndIndex = data.indexOf(27, versionIndex + BUN_VERSION_MATCH.length);
 
   if (versionEndIndex <= 0) {
-    throw new InvalidExecutableError("Could not find Bun version end in executable");
+    throw new VersionNotFoundError();
   }
 
   const decoder = new TextDecoder();
@@ -173,11 +182,65 @@ export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion
   const [, version, revision] = versionString.match(/^(.+) \((.+)\)$/) ?? [];
 
   if (!version) {
-    throw new InvalidExecutableError("Could not match Bun version in executable");
+    throw new VersionNotFoundError();
   }
 
   return {
     version,
     revision,
   };
+}
+
+function getExecutableVersionOld(data: Uint8Array): BunVersion {
+  const versionIndex = data.findIndex((_, index) => {
+    for (let i = 0; i < BUN_VERSION_MATCH_OLD.length; i++) {
+      if (data[index + i] !== BUN_VERSION_MATCH_OLD.charCodeAt(i)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  if (versionIndex === -1) {
+    throw new VersionNotFoundError();
+  }
+
+  const versionEndIndex = data.indexOf(58, versionIndex + BUN_VERSION_MATCH_OLD.length);
+
+  if (versionEndIndex <= 0) {
+    throw new VersionNotFoundError();
+  }
+
+  const decoder = new TextDecoder();
+  const versionString = decoder.decode(
+    data.slice(versionIndex + BUN_VERSION_MATCH_OLD.length, versionEndIndex),
+  );
+
+  const [, version, revision] = versionString.match(/^(.+) \((.+)\)/) ?? [];
+
+  if (!version) {
+    throw new VersionNotFoundError();
+  }
+
+  return {
+    version,
+    revision,
+  };
+}
+
+export function getExecutableVersion(data: Uint8Array | ArrayBuffer) {
+  if (data instanceof ArrayBuffer) {
+    data = new Uint8Array(data);
+  }
+
+  try {
+    return getExecutableVersionNew(data);
+  } catch (e) {
+    if (e instanceof VersionNotFoundError) {
+      return getExecutableVersionOld(data);
+    }
+
+    throw e;
+  }
 }
