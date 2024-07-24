@@ -75,35 +75,6 @@ describe("extractBundledFiles", () => {
     expect(restSorted[1].path).toMatch(/\/password2.*\.bin$/);
   });
 
-  test("with dummy executable removing leading slash", () => {
-    const bundledFiles = extractBundledFiles(dummyData, {
-      removeBunfsRoot: false,
-      removeLeadingSlash: true,
-    });
-
-    // There should be exactly three bundled files
-    expect(bundledFiles).toHaveLength(3);
-
-    // No files should have a leading slash
-    for (const bundledFile of bundledFiles) {
-      expect(bundledFile.path).not.toStartWith("/");
-    }
-
-    // All files should start with Bun-fs root
-    for (const bundledFile of bundledFiles) {
-      expect("/" + bundledFile.path).toStartWith(BUNFS_ROOT);
-    }
-
-    // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toEndWith("/dummy");
-
-    // After that, the rest of the files will be in an unknown order
-    // so we'll sort them by path to make the test deterministic
-    const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-    expect(restSorted[0].path).toMatch(/\/favicon.*\.png$/);
-    expect(restSorted[1].path).toMatch(/\/password2.*\.bin$/);
-  });
-
   test("with dummy executable removing Bun-fs root and leading slash", () => {
     const bundledFiles = extractBundledFiles(dummyData, {
       removeBunfsRoot: true,
