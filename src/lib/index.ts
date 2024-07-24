@@ -114,5 +114,5 @@ export function removeBunfsRootFromPath(path: string) {
   if (path.startsWith(BUNFS_ROOT)) {
     return path.slice(BUNFS_ROOT.length);
   }
-  return path;
+  throw new Error("Path does not start with Bun-fs root");
 }
