@@ -19,7 +19,7 @@ let dummyData: ArrayBuffer;
 
 beforeAll(async () => {
   // Run the Bun bundler to compile the dummy executable
-  await $`bun build src/lib/tests/dummy/index.ts --compile --outfile src/lib/tests/dummy/dummy`;
+  await $`bun run build-dummy`;
 
   // Get a reference to the dummy executable file
   dummy = Bun.file("src/lib/tests/dummy/dummy");
