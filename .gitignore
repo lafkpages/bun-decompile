@@ -1,4 +1,5 @@
 /src/lib/tests/dummy/dummy
+/src/lib/tests/dummy/dummy-v*
 
 node_modules
 
