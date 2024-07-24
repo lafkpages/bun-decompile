@@ -1,3 +1,4 @@
+import type { BunVersion } from "..";
 import type { BunFile } from "bun";
 
 import { rm } from "node:fs/promises";
@@ -19,6 +20,11 @@ let dummy: BunFile;
 let dummyData: ArrayBuffer;
 
 let notAnExecutable: ArrayBuffer;
+
+const currentVersion: BunVersion = {
+  version: Bun.version,
+  revision: Bun.revision.slice(0, 8),
+};
 
 beforeAll(async () => {
   // Run the Bun bundler to compile the dummy executable
@@ -153,10 +159,7 @@ describe("getExecutableVersion", () => {
 
     // The version of Bun in the executable should be the same as the current runtime,
     // as we call Bun build earlier with this same instance of Bun (supposedly)
-    expect(version).toEqual({
-      version: Bun.version,
-      revision: Bun.revision.slice(0, 8),
-    });
+    expect(version).toEqual(currentVersion);
   });
 
   test("with current runtime", async () => {
@@ -170,10 +173,7 @@ describe("getExecutableVersion", () => {
     const version = getExecutableVersion(runtimeExecutableData);
 
     // The versions should be equal as we are comparing to the current runtime
-    expect(version).toEqual({
-      version: Bun.version,
-      revision: Bun.revision.slice(0, 8),
-    });
+    expect(version).toEqual(currentVersion);
   });
 
   test("with a non-executable", () => {

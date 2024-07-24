@@ -122,7 +122,12 @@ export function removeBunfsRootFromPath(path: string) {
   throw new Error("Path does not start with Bun-fs root");
 }
 
-export function getExecutableVersion(data: Uint8Array | ArrayBuffer) {
+export interface BunVersion {
+  version: string;
+  revision: string;
+}
+
+export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion {
   if (data instanceof ArrayBuffer) {
     data = new Uint8Array(data);
   }

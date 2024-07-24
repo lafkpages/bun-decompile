@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { BundledFile as TBundledFile } from "$lib";
+  import type { BunVersion, BundledFile as TBundledFile } from "$lib";
 
   import { onMount } from "svelte";
 
   import JSZip from "jszip";
 
-  import { extractBundledFiles, removeBunfsRootFromPath } from "$lib";
+  import { extractBundledFiles, getExecutableVersion, removeBunfsRootFromPath } from "$lib";
   import BundledFile from "$lib/components/BundledFile.svelte";
 
   let files: FileList;
@@ -13,6 +13,7 @@
 
   let reader: FileReader;
 
+  let bunVersion: BunVersion | null = null;
   let bundledFiles: TBundledFile[] = [];
 
   let removeBunfsRoot = true;
@@ -54,6 +55,13 @@
         return;
       }
 
+      try {
+        bunVersion = getExecutableVersion(reader.result);
+      } catch (err) {
+        console.error("Error getting executable version:", err);
+        bunVersion = null;
+      }
+
       bundledFiles = extractBundledFiles(reader.result, {
         removeBunfsRoot,
         removeLeadingSlash,
@@ -65,8 +73,8 @@
 <h1>bun-decompile</h1>
 
 <p>
-  Extracts JavaScript sources from an executable file generated via <code>bun build --compile</code
-  >.
+  Extracts JavaScript sources from an executable file generated via
+  <code>bun build --compile</code>.
 </p>
 
 <input type="file" id="compiled-binary-upload" bind:files />
@@ -91,6 +99,19 @@
 
 <hr />
 
+<h2>Executable metadata</h2>
+
+<p>
+  Bun version:
+  {#if bunVersion}
+    <code>{bunVersion.version}</code> (<code>{bunVersion.revision}</code>)
+  {:else}
+    unknown
+  {/if}
+</p>
+
+<h2>Bundled files</h2>
+
 <ul>
   {#each bundledFiles as bundledFile}
     <li>
@@ -100,7 +121,7 @@
 </ul>
 
 <style>
-  a {
+  a[download] {
     display: none;
   }
 </style>
