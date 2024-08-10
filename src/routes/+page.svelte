@@ -69,10 +69,15 @@
         bunVersion = null;
       }
 
-      bundledFiles = extractBundledFiles(reader.result, {
-        removeBunfsRoot,
-        removeLeadingSlash,
-      });
+      try {
+        bundledFiles = extractBundledFiles(reader.result, {
+          removeBunfsRoot,
+          removeLeadingSlash,
+        });
+      } catch (err) {
+        console.error("Error extracting bundled files:", err);
+        alert(`Error extracting bundled files:\n${err}`);
+      }
     };
   });
 </script>
