@@ -109,12 +109,18 @@ export function extractBundledFiles(
 
   const modulesMetadataStart = modulesEnd;
 
+  const payloadSize =
+    compiledBinaryData.getUint32(compiledBinaryData.byteLength - 68, true) +
+    compiledBinaryData.getUint32(compiledBinaryData.byteLength - 64, true);
+  const newFormat = payloadSize + 1 === modulesPtrOffset;
+  const modulesMetadataChunkSize = newFormat ? 28 : 32;
+
   const bundledFiles: BundledFile[] = [];
   let currentOffset = 0;
-  for (let i = 0; i < modulesPtrLength / 32; i++) {
+  for (let i = 0; i < modulesPtrLength / modulesMetadataChunkSize; i++) {
     console.debug("Iterating bundled files, at offset", currentOffset);
 
-    const modulesMetadataOffset = modulesMetadataStart + i * 28;
+    const modulesMetadataOffset = modulesMetadataStart + i * modulesMetadataChunkSize;
     const pathLength = compiledBinaryData.getUint32(modulesMetadataOffset + 4, true);
     const contentsLength = compiledBinaryData.getUint32(modulesMetadataOffset + 12, true);
     const sourcemapLength = compiledBinaryData.getUint32(modulesMetadataOffset + 20, true);
@@ -130,7 +136,7 @@ export function extractBundledFiles(
       path = removeLeadingSlash(path);
     }
 
-    const contentsStart = currentOffset + pathLength + 1;
+    const contentsStart = currentOffset + pathLength + (newFormat ? 1 : 0);
     const contentsEnd = contentsStart + contentsLength;
     const contents = modulesData.slice(contentsStart, contentsEnd);
 
@@ -161,7 +167,7 @@ export function extractBundledFiles(
 
     bundledFiles.push({ path, contents, sourcemap });
 
-    currentOffset += pathLength + 1 + contentsLength + 1 + sourcemapLength;
+    currentOffset += pathLength + contentsLength + sourcemapLength + (newFormat ? 2 : 0);
   }
 
   return bundledFiles;
