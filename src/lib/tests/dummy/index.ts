@@ -28,3 +28,11 @@ for await (const guess of console) {
 // Print something about the favicon so that it's included in the bundle
 const faviconFile = Bun.file(favicon);
 console.log("Favicon is", faviconFile.size, "bytes");
+
+// This below is an attempt to fool getExecutableVersion. If it returns fakeversion,
+// then we have successfully fooled it, which means getExecutableVersion should be
+// updated.
+const fakeVersion = `----- bun meta -----
+Bun vfakeversion1 (abcdefgh):`;
+fakeVersion.trim(); // prevent dead code elimination
+await import("./fakeversion.bin");

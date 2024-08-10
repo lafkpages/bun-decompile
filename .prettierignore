@@ -1,5 +1,7 @@
 # Dummy compiled binary
 /src/lib/tests/dummy/dummy
+/src/lib/tests/dummy/dummy-v*
+/src/lib/segfault.ts
 
 # Package Managers
 package-lock.json

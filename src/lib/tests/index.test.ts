@@ -31,7 +31,7 @@ beforeAll(async () => {
   await $`bun run build-dummy`;
 
   // Get a reference to the dummy executable file
-  dummy = Bun.file("src/lib/tests/dummy/dummy");
+  dummy = Bun.file(`src/lib/tests/dummy/dummy-v${currentVersion.version}`);
 
   // Generate some binary data which is not a Bun-compiled executable
   notAnExecutable = new ArrayBuffer(8);
@@ -52,8 +52,8 @@ describe("extractBundledFiles", () => {
       removeLeadingSlash: false,
     });
 
-    // There should be exactly three bundled files
-    expect(bundledFiles).toHaveLength(3);
+    // There should be exactly four bundled files
+    expect(bundledFiles).toHaveLength(4);
 
     // All files should have a leading slash
     for (const bundledFile of bundledFiles) {
@@ -71,8 +71,9 @@ describe("extractBundledFiles", () => {
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
     const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-    expect(restSorted[0].path).toMatch(/\/favicon.*\.png$/);
-    expect(restSorted[1].path).toMatch(/\/password2.*\.bin$/);
+    expect(restSorted[0].path).toMatch(/\/fakeversion.*\.bin$/);
+    expect(restSorted[1].path).toMatch(/\/favicon.*\.png$/);
+    expect(restSorted[2].path).toMatch(/\/password2.*\.bin$/);
   });
 
   test("with dummy executable removing Bun-fs root and leading slash", () => {
@@ -81,8 +82,8 @@ describe("extractBundledFiles", () => {
       removeLeadingSlash: true,
     });
 
-    // There should be exactly three bundled files
-    expect(bundledFiles).toHaveLength(3);
+    // There should be exactly four bundled files
+    expect(bundledFiles).toHaveLength(4);
 
     // No files should have a leading slash
     for (const bundledFile of bundledFiles) {
@@ -100,8 +101,9 @@ describe("extractBundledFiles", () => {
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
     const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-    expect(restSorted[0].path).toMatch(/^favicon.*\.png$/);
-    expect(restSorted[1].path).toMatch(/^password2.*\.bin$/);
+    expect(restSorted[0].path).toMatch(/^fakeversion.*\.bin$/);
+    expect(restSorted[1].path).toMatch(/^favicon.*\.png$/);
+    expect(restSorted[2].path).toMatch(/^password2.*\.bin$/);
 
     // Trying to remove Bun-fs root from a path should throw, since
     // it has already been removed in extractBundledFiles
@@ -130,7 +132,8 @@ describe("getExecutableVersion", () => {
 
     // The version of Bun in the executable should be the same as the current runtime,
     // as we call Bun build earlier with this same instance of Bun (supposedly)
-    expect(version).toEqual(currentVersion);
+    expect(version.version).toBe(currentVersion.version);
+    expect(version.revision).toBe(currentVersion.revision);
   });
 
   test("with current runtime", async () => {
@@ -144,7 +147,8 @@ describe("getExecutableVersion", () => {
     const version = getExecutableVersion(runtimeExecutableData);
 
     // The versions should be equal as we are comparing to the current runtime
-    expect(version).toEqual(currentVersion);
+    expect(version.version).toBe(currentVersion.version);
+    expect(version.revision).toBe(currentVersion.revision);
   });
 
   test("with a non-executable", () => {

@@ -5,7 +5,7 @@
 
   import JSZip from "jszip";
 
-  import { extractBundledFiles, getExecutableVersion, removeBunfsRootFromPath } from "$lib";
+  import { extractBundledFiles, getExecutableVersion } from "$lib";
   import BundledFile from "$lib/components/BundledFile.svelte";
 
   let files: FileList;
@@ -27,6 +27,9 @@
       return;
     }
 
+    bundledFiles.length = 0;
+    bundledFiles = bundledFiles;
+
     reader.readAsArrayBuffer(file);
   }
 
@@ -40,6 +43,10 @@
 
     for (const bundledFile of bundledFiles) {
       zip.file(bundledFile.path, bundledFile.contents);
+
+      if (bundledFile.sourcemap) {
+        zip.file(`${bundledFile.path}.map`, JSON.stringify(bundledFile.sourcemap, null, 2));
+      }
     }
 
     const zipData = await zip.generateAsync({ type: "base64" });
@@ -110,6 +117,15 @@
     (<a href="https://github.com/oven-sh/bun/commit/{bunVersion.revision}"
       ><code>{bunVersion.revision}</code></a
     >)
+  {:else}
+    unknown
+  {/if}
+
+  <br />
+
+  Bun version format:
+  {#if bunVersion?.newFormat !== undefined}
+    <code>{bunVersion.newFormat ? "new" : "old"}</code>
   {:else}
     unknown
   {/if}

@@ -19,16 +19,23 @@
   const decoder = new TextDecoder();
 </script>
 
-<h2>{bundledFile.path}</h2>
+<div>
+  <h2 id="file/{bundledFile.path}">{bundledFile.path}</h2>
 
-{#await fileTypePromise}
-  <p>Determining file type</p>
-{:then fileType}
-  {#if imageSrc}
-    <img src={imageSrc} alt="Bundled file preview for {fileTypePromise}" />
-  {:else if fileType}
-    <p>File MIME: {fileType.mime}</p>
-  {:else}
-    <CodeView code={decoder.decode(bundledFile.contents)} />
+  {#if bundledFile.sourcemap}
+    <h3>Sourcemap</h3>
+    <CodeView code={JSON.stringify(bundledFile.sourcemap)} language="json" format />
   {/if}
-{/await}
+
+  {#await fileTypePromise}
+    <p>Determining file type</p>
+  {:then fileType}
+    {#if imageSrc}
+      <img src={imageSrc} alt="Bundled file preview for {fileTypePromise}" />
+    {:else if fileType}
+      <p>File MIME: {fileType.mime}</p>
+    {:else}
+      <CodeView code={decoder.decode(bundledFile.contents)} />
+    {/if}
+  {/await}
+</div>

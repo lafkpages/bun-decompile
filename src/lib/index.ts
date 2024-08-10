@@ -9,6 +9,12 @@ import {
 export interface BundledFile {
   path: string;
   contents: ArrayBuffer;
+  sourcemap?: {
+    version: 3;
+    file: string;
+    mappings: string;
+    sources: [string];
+  };
 }
 
 const corruptionMessage =
@@ -106,9 +112,12 @@ export function extractBundledFiles(
   const bundledFiles: BundledFile[] = [];
   let currentOffset = 0;
   for (let i = 0; i < modulesPtrLength / 32; i++) {
-    const modulesMetadataOffset = modulesMetadataStart + i * 32;
+    console.debug("Iterating bundled files, at offset", currentOffset);
+
+    const modulesMetadataOffset = modulesMetadataStart + i * 28;
     const pathLength = compiledBinaryData.getUint32(modulesMetadataOffset + 4, true);
     const contentsLength = compiledBinaryData.getUint32(modulesMetadataOffset + 12, true);
+    const sourcemapLength = compiledBinaryData.getUint32(modulesMetadataOffset + 20, true);
 
     let path = decoder.decode(modulesData.slice(currentOffset, currentOffset + pathLength));
     if (options.removeBunfsRoot) {
@@ -121,14 +130,38 @@ export function extractBundledFiles(
       path = removeLeadingSlash(path);
     }
 
-    const contents = modulesData.slice(
-      currentOffset + pathLength,
-      currentOffset + pathLength + contentsLength,
-    );
+    const contentsStart = currentOffset + pathLength + 1;
+    const contentsEnd = contentsStart + contentsLength;
+    const contents = modulesData.slice(contentsStart, contentsEnd);
 
-    bundledFiles.push({ path, contents });
+    let sourcemap: BundledFile["sourcemap"];
+    if (sourcemapLength) {
+      const sourcemapMappingsLength = compiledBinaryData.getUint32(
+        modulesStart + currentOffset + contentsEnd + 5,
+        true,
+      );
 
-    currentOffset += pathLength + contentsLength;
+      const sourcemapSourceLength = compiledBinaryData.getUint32(
+        modulesStart + currentOffset + contentsEnd + 13,
+        true,
+      );
+
+      const mappingsStart = contentsEnd + 25;
+      const mappingsEnd = mappingsStart + sourcemapMappingsLength;
+
+      sourcemap = {
+        version: 3,
+        file: path,
+        mappings: decoder.decode(modulesData.slice(mappingsStart, mappingsEnd)),
+        sources: [
+          decoder.decode(modulesData.slice(mappingsEnd, mappingsEnd + sourcemapSourceLength)),
+        ],
+      };
+    }
+
+    bundledFiles.push({ path, contents, sourcemap });
+
+    currentOffset += pathLength + 1 + contentsLength + 1 + sourcemapLength;
   }
 
   return bundledFiles;
@@ -141,7 +174,7 @@ export function removeBunfsRootFromPath(path: string) {
   if (path.startsWith(BUNFS_ROOT_OLD)) {
     return path.slice(BUNFS_ROOT_OLD.length);
   }
-  throw new Error("Path does not start with Bun-fs root");
+  throw new Error(`Path does not start with Bun-fs root: ${path}`);
 }
 
 export function removeLeadingSlash(path: string) {
@@ -151,6 +184,7 @@ export function removeLeadingSlash(path: string) {
 export interface BunVersion {
   version: string;
   revision: string;
+  newFormat?: boolean;
 }
 
 function getExecutableVersionNew(data: Uint8Array): BunVersion {
@@ -229,16 +263,16 @@ function getExecutableVersionOld(data: Uint8Array): BunVersion {
   };
 }
 
-export function getExecutableVersion(data: Uint8Array | ArrayBuffer) {
+export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion {
   if (data instanceof ArrayBuffer) {
     data = new Uint8Array(data);
   }
 
   try {
-    return getExecutableVersionNew(data);
+    return { ...getExecutableVersionNew(data), newFormat: true };
   } catch (e) {
     if (e instanceof VersionNotFoundError) {
-      return getExecutableVersionOld(data);
+      return { ...getExecutableVersionOld(data), newFormat: false };
     }
 
     throw e;
