@@ -12,6 +12,7 @@ export interface BundledFile {
   sourcemap?: {
     version: 3;
     file: string;
+    debugId?: string;
     mappings: string;
     sources: [string];
   };
@@ -155,9 +156,13 @@ export function extractBundledFiles(
       const mappingsStart = contentsEnd + 25;
       const mappingsEnd = mappingsStart + sourcemapMappingsLength;
 
+      const contentsEndData = decoder.decode(contents.slice(contents.byteLength - 49));
+      const debugId = contentsEndData.match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
+
       sourcemap = {
         version: 3,
         file: path,
+        debugId,
         mappings: decoder.decode(modulesData.slice(mappingsStart, mappingsEnd)),
         sources: [
           decoder.decode(modulesData.slice(mappingsEnd, mappingsEnd + sourcemapSourceLength)),
