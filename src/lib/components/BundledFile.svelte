@@ -17,14 +17,16 @@
   let imageSrc: string | null = null;
 
   const decoder = new TextDecoder();
+  $: contents = decoder.decode(bundledFile.contents);
+  $: sourcemapJson = bundledFile.sourcemap ? JSON.stringify(bundledFile.sourcemap) : null;
 </script>
 
 <div>
   <h2 id="file/{bundledFile.path}">{bundledFile.path}</h2>
 
-  {#if bundledFile.sourcemap}
+  {#if sourcemapJson}
     <h3>Sourcemap</h3>
-    <CodeView code={JSON.stringify(bundledFile.sourcemap)} language="json" format />
+    <CodeView code={sourcemapJson} language="json" format />
   {/if}
 
   {#await fileTypePromise}
@@ -35,7 +37,7 @@
     {:else if fileType}
       <p>File MIME: {fileType.mime}</p>
     {:else}
-      <CodeView code={decoder.decode(bundledFile.contents)} />
+      <CodeView code={contents} />
     {/if}
   {/await}
 </div>
