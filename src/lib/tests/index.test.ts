@@ -66,7 +66,7 @@ describe("extractBundledFiles", () => {
     }
 
     // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toEndWith("/dummy");
+    expect(bundledFiles[0].path).toMatch(/\/dummy-v[a-z0-9.-]+$/i);
 
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
@@ -96,7 +96,7 @@ describe("extractBundledFiles", () => {
     }
 
     // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toBe("dummy");
+    expect(bundledFiles[0].path).toMatch(/^dummy-v[a-z0-9.-]+$/i);
 
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
@@ -132,7 +132,9 @@ describe("getExecutableVersion", () => {
 
     // The version of Bun in the executable should be the same as the current runtime,
     // as we call Bun build earlier with this same instance of Bun (supposedly)
-    expect(version.version).toBe(currentVersion.version);
+
+    // Use a RegEx to allow for canary versions (eg. 1.1.22-canary.96)
+    expect(version.version).toMatch(new RegExp(`^${currentVersion.version}(-.+)?$`));
     expect(version.revision).toBe(currentVersion.revision);
   });
 
@@ -147,7 +149,7 @@ describe("getExecutableVersion", () => {
     const version = getExecutableVersion(runtimeExecutableData);
 
     // The versions should be equal as we are comparing to the current runtime
-    expect(version.version).toBe(currentVersion.version);
+    expect(version.version).toMatch(new RegExp(`^${currentVersion.version}(-.+)?$`));
     expect(version.revision).toBe(currentVersion.revision);
   });
 
