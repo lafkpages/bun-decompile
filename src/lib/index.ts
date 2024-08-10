@@ -158,6 +158,8 @@ export function extractBundledFiles(
 
       const contentsEndData = decoder.decode(contents.slice(contents.byteLength - 49));
       const debugId = contentsEndData.match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
+      // RegEx copied from the sourcemaps debug-id spec:
+      // https://github.com/tc39/source-map/blob/main/proposals/debug-id.md#appendix-a-self-description-of-source-maps-and-javascript-files
 
       sourcemap = {
         version: 3,
