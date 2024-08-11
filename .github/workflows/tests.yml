@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           bun install --frozen-lockfile
-          bun install -g multibun
+          bun install -g multibun@^1.0.3
       - name: Install Bun versions from v0.6.0
         run: bun run -b multibun install --from 0.6.0
       - name: Run tests
