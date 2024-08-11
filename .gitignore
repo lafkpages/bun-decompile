@@ -1,5 +1,9 @@
+# Dummy executables
 /src/lib/tests/dummy/dummy
 /src/lib/tests/dummy/dummy-v*
+
+# Test reports
+/tests.html
 
 node_modules
 

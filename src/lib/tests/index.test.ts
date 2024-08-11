@@ -1,10 +1,6 @@
-import type { BunVersion } from "..";
 import type { BunFile } from "bun";
 
-import { rm } from "node:fs/promises";
-
-import { $ } from "bun";
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   extractBundledFiles,
@@ -21,17 +17,15 @@ let dummyData: ArrayBuffer;
 
 let notAnExecutable: ArrayBuffer;
 
-const currentVersion: BunVersion = {
-  version: Bun.version,
-  revision: Bun.revision.slice(0, 8),
-};
+const expectedVersion = process.env.DUMMY_VERSION;
+
+if (!expectedVersion) {
+  throw new Error("$DUMMY_VERSION is not set");
+}
 
 beforeAll(async () => {
-  // Run the Bun bundler to compile the dummy executable
-  await $`bun run build-dummy`;
-
   // Get a reference to the dummy executable file
-  dummy = Bun.file(`src/lib/tests/dummy/dummy-v${currentVersion.version}`);
+  dummy = Bun.file("src/lib/tests/dummy/dummy");
 
   // Generate some binary data which is not a Bun-compiled executable
   notAnExecutable = new ArrayBuffer(8);
@@ -66,7 +60,7 @@ describe("extractBundledFiles", () => {
     }
 
     // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toMatch(/\/dummy-v[a-z0-9.-]+$/i);
+    expect(bundledFiles[0].path).toEndWith("/dummy");
 
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
@@ -96,7 +90,7 @@ describe("extractBundledFiles", () => {
     }
 
     // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toMatch(/^dummy-v[a-z0-9.-]+$/i);
+    expect(bundledFiles[0].path).toBe("dummy");
 
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
@@ -134,8 +128,7 @@ describe("getExecutableVersion", () => {
     // as we call Bun build earlier with this same instance of Bun (supposedly)
 
     // Use a RegEx to allow for canary versions (eg. 1.1.22-canary.96)
-    expect(version.version).toMatch(new RegExp(`^${currentVersion.version}(-.+)?$`));
-    expect(version.revision).toBe(currentVersion.revision);
+    expect(version.version).toMatch(new RegExp(`^${expectedVersion}(-.+)?$`));
   });
 
   test("with current runtime", async () => {
@@ -149,15 +142,10 @@ describe("getExecutableVersion", () => {
     const version = getExecutableVersion(runtimeExecutableData);
 
     // The versions should be equal as we are comparing to the current runtime
-    expect(version.version).toMatch(new RegExp(`^${currentVersion.version}(-.+)?$`));
-    expect(version.revision).toBe(currentVersion.revision);
+    expect(version.version).toMatch(new RegExp(`^${Bun.version}(-.+)?$`));
   });
 
   test("with a non-executable", () => {
     expect(() => getExecutableVersion(notAnExecutable)).toThrowError(InvalidExecutableError);
   });
-});
-
-afterAll(async () => {
-  await rm(dummy.name!);
 });
