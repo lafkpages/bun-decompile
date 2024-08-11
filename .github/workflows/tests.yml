@@ -18,6 +18,8 @@ jobs:
           bun install -g multibun@^1.0.3
       - name: Install Bun versions from v0.6.0
         run: bun run -b multibun install --from 0.6.0
+        env:
+          MULTIBUN_GITHUB_TOKEN: ${{ github.token }}
       - name: Run tests
         run: bun run -b tests
       - name: Archive test results
