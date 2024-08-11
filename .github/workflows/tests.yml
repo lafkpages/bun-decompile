@@ -16,7 +16,9 @@ jobs:
       - name: Install Bun versions from v0.6.0
         run: bun run -b multibun install --from 0.6.0
         env:
-          BUN_INSTALL: ${{ steps.bun.outputs.bun-install }}
+          BUN_INSTALL:
+            ${{ env.HOME }}/.bun
+            # TODO: use ${{ steps.bun.outputs.bun-install }}
       - name: Run tests
         run: bun run -b tests
       - name: Archive test results
