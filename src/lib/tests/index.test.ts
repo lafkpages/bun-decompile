@@ -86,11 +86,9 @@ describe("getExecutableVersion", () => {
   });
 
   test("with current runtime", async () => {
-    const runtimePath = Bun.which(process.argv0);
+    expect(process.execPath).toBeString();
 
-    expect(runtimePath).toBeString();
-
-    const runtimeExecutable = Bun.file(runtimePath!);
+    const runtimeExecutable = Bun.file(process.execPath);
     const runtimeExecutableData = await runtimeExecutable.arrayBuffer();
 
     const version = getExecutableVersion(runtimeExecutableData);

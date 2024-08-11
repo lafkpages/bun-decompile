@@ -28,7 +28,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check .",
-    "tests": "multibun run --from 0.6.0 -x ./src/dummyTests.sh -n --html tests.html",
+    "tests": "multibun run --from 0.6.0 -x ./src/scripts/dummyTests.sh -n --html tests.html",
     "format": "prettier --write .",
     "optimise-svg": "svgo -f static"
   },

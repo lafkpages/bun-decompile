@@ -87,14 +87,12 @@ export function extractBundledFiles(
     throw new TotalByteCountMismatchError();
   }
 
-  const offsetByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 48, true);
-
   const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
 
   const modulesPtrOffset = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 40, true);
   const modulesPtrLength = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 36, true);
 
-  const modulesStart = compiledBinaryData.byteLength - (offsetByteCount + 48);
+  const modulesStart = getModulesStart(compiledBinaryData);
   const modulesEnd = modulesStart + modulesPtrOffset;
   const modulesData = compiledBinaryData.buffer.slice(modulesStart, modulesEnd);
 
@@ -175,6 +173,16 @@ export function extractBundledFiles(
   return bundledFiles;
 }
 
+function getModulesStart(compiledBinaryData: DataView) {
+  if (compiledBinaryData.byteLength <= 48) {
+    return 0;
+  }
+
+  const offsetByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 48, true);
+
+  return compiledBinaryData.byteLength - (offsetByteCount + 48);
+}
+
 function removeBunfsRootFromPath(path: string) {
   if (path.startsWith(BUNFS_ROOT)) {
     return path.slice(BUNFS_ROOT.length);
@@ -195,8 +203,12 @@ export interface BunVersion {
   newFormat?: boolean;
 }
 
-function getExecutableVersionNew(data: Uint8Array): BunVersion {
+function getExecutableVersionNew(data: Uint8Array, modulesStart: number): BunVersion {
   const versionIndex = data.findIndex((_, index) => {
+    if (index >= modulesStart) {
+      return false;
+    }
+
     for (let i = 0; i < BUN_VERSION_MATCH.length; i++) {
       if (data[index + i] !== BUN_VERSION_MATCH.charCodeAt(i)) {
         return false;
@@ -233,8 +245,12 @@ function getExecutableVersionNew(data: Uint8Array): BunVersion {
   };
 }
 
-function getExecutableVersionOld(data: Uint8Array): BunVersion {
+function getExecutableVersionOld(data: Uint8Array, modulesStart: number): BunVersion {
   const versionIndex = data.findIndex((_, index) => {
+    if (index >= modulesStart) {
+      return false;
+    }
+
     for (let i = 0; i < BUN_VERSION_MATCH_OLD.length; i++) {
       if (data[index + i] !== BUN_VERSION_MATCH_OLD.charCodeAt(i)) {
         return false;
@@ -276,11 +292,13 @@ export function getExecutableVersion(data: Uint8Array | ArrayBuffer): BunVersion
     data = new Uint8Array(data);
   }
 
+  const modulesStart = getModulesStart(new DataView(data.buffer));
+
   try {
-    return { ...getExecutableVersionNew(data), newFormat: true };
+    return { ...getExecutableVersionNew(data, modulesStart), newFormat: true };
   } catch (e) {
     if (e instanceof VersionNotFoundError) {
-      return { ...getExecutableVersionOld(data), newFormat: false };
+      return { ...getExecutableVersionOld(data, modulesStart), newFormat: false };
     }
 
     throw e;
