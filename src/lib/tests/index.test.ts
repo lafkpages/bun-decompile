@@ -7,10 +7,8 @@ import {
   getExecutableVersion,
   InvalidExecutableError,
   InvalidTrailerError,
-  removeBunfsRootFromPath,
   TotalByteCountMismatchError,
 } from "..";
-import { BUNFS_ROOT } from "../constants";
 
 let dummy: BunFile;
 let dummyData: ArrayBuffer;
@@ -41,56 +39,18 @@ beforeEach(async () => {
 
 describe("extractBundledFiles", () => {
   test("with dummy executable", () => {
-    const bundledFiles = extractBundledFiles(dummyData, {
-      removeBunfsRoot: false,
-      removeLeadingSlash: false,
-    });
+    const bundledFiles = extractBundledFiles(dummyData);
 
     // There should be exactly four bundled files
     expect(bundledFiles).toHaveLength(4);
 
-    // All files should have a leading slash
+    // All file paths should not have slashes
     for (const bundledFile of bundledFiles) {
-      expect(bundledFile.path).toStartWith("/");
+      expect(bundledFile.path).not.toInclude("/");
     }
 
-    // All files should start with Bun-fs root
-    for (const bundledFile of bundledFiles) {
-      expect(bundledFile.path).toStartWith(BUNFS_ROOT);
-    }
-
-    // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toEndWith("/dummy");
-
-    // After that, the rest of the files will be in an unknown order
-    // so we'll sort them by path to make the test deterministic
-    const restSorted = bundledFiles.slice(1).sort((a, b) => a.path.localeCompare(b.path));
-    expect(restSorted[0].path).toMatch(/\/fakeversion.*\.bin$/);
-    expect(restSorted[1].path).toMatch(/\/favicon.*\.png$/);
-    expect(restSorted[2].path).toMatch(/\/password2.*\.bin$/);
-  });
-
-  test("with dummy executable removing Bun-fs root and leading slash", () => {
-    const bundledFiles = extractBundledFiles(dummyData, {
-      removeBunfsRoot: true,
-      removeLeadingSlash: true,
-    });
-
-    // There should be exactly four bundled files
-    expect(bundledFiles).toHaveLength(4);
-
-    // No files should have a leading slash
-    for (const bundledFile of bundledFiles) {
-      expect(bundledFile.path).not.toStartWith("/");
-    }
-
-    // No files should have Bun-fs root
-    for (const bundledFile of bundledFiles) {
-      expect(bundledFile.path).not.toContain(BUNFS_ROOT);
-    }
-
-    // The first file should be the dummy executable itself
-    expect(bundledFiles[0].path).toBe("dummy");
+    // The first file should be the entrypoint
+    expect(bundledFiles[0].path).toBe("index.js");
 
     // After that, the rest of the files will be in an unknown order
     // so we'll sort them by path to make the test deterministic
@@ -98,12 +58,6 @@ describe("extractBundledFiles", () => {
     expect(restSorted[0].path).toMatch(/^fakeversion.*\.bin$/);
     expect(restSorted[1].path).toMatch(/^favicon.*\.png$/);
     expect(restSorted[2].path).toMatch(/^password2.*\.bin$/);
-
-    // Trying to remove Bun-fs root from a path should throw, since
-    // it has already been removed in extractBundledFiles
-    for (const bundledFile of bundledFiles) {
-      expect(() => removeBunfsRootFromPath(bundledFile.path)).toThrowError();
-    }
   });
 
   test("with a non-executable", () => {

@@ -50,8 +50,7 @@ export class VersionNotFoundError extends InvalidExecutableError {
 }
 
 export interface ExtractBundledFilesOptions {
-  removeBunfsRoot?: boolean;
-  removeLeadingSlash?: boolean;
+  normaliseEntrypointFileName?: boolean;
 }
 
 export function extractBundledFiles(
@@ -59,16 +58,9 @@ export function extractBundledFiles(
   options: ExtractBundledFilesOptions = {},
 ) {
   options = {
-    removeBunfsRoot: true,
-    removeLeadingSlash: true,
+    normaliseEntrypointFileName: true,
     ...options,
   };
-
-  if (!options.removeBunfsRoot && options.removeLeadingSlash) {
-    throw new Error(
-      "Cannot remove leading slash without removing Bun-fs root from bundled file paths",
-    );
-  }
 
   if (compiledBinaryData instanceof ArrayBuffer) {
     compiledBinaryData = new DataView(compiledBinaryData);
@@ -97,11 +89,9 @@ export function extractBundledFiles(
 
   const offsetByteCount = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 48, true);
 
-  // Not sure what this is for
-  // const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
+  const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
 
   const modulesPtrOffset = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 40, true);
-
   const modulesPtrLength = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 36, true);
 
   const modulesStart = compiledBinaryData.byteLength - (offsetByteCount + 48);
@@ -120,6 +110,7 @@ export function extractBundledFiles(
   let currentOffset = 0;
   for (let i = 0; i < modulesPtrLength / modulesMetadataChunkSize; i++) {
     console.debug("Iterating bundled files, at offset", currentOffset);
+    const isEntrypoint = i === entrypointId;
 
     const modulesMetadataOffset = modulesMetadataStart + i * modulesMetadataChunkSize;
     const pathLength = compiledBinaryData.getUint32(modulesMetadataOffset + 4, true);
@@ -127,15 +118,14 @@ export function extractBundledFiles(
     const sourcemapLength = compiledBinaryData.getUint32(modulesMetadataOffset + 20, true);
 
     let path = decoder.decode(modulesData.slice(currentOffset, currentOffset + pathLength));
-    if (options.removeBunfsRoot) {
-      path = removeBunfsRootFromPath(path);
+    if (options.normaliseEntrypointFileName && isEntrypoint) {
+      path = path.replace(/\/[^\/\\]+$/, "/index.js");
     }
+    path = removeBunfsRootFromPath(path);
     if (path[0] !== "/") {
       throw new InvalidExecutableError("Invalid path in bundled file in executable");
     }
-    if (options.removeLeadingSlash) {
-      path = removeLeadingSlash(path);
-    }
+    path = removeLeadingSlash(path);
 
     const contentsStart = currentOffset + pathLength + (newFormat ? 1 : 0);
     const contentsEnd = contentsStart + contentsLength;
@@ -172,7 +162,12 @@ export function extractBundledFiles(
       };
     }
 
-    bundledFiles.push({ path, contents, sourcemap });
+    const bundledFile: BundledFile = { path, contents, sourcemap };
+    if (isEntrypoint) {
+      bundledFiles.unshift(bundledFile);
+    } else {
+      bundledFiles.push(bundledFile);
+    }
 
     currentOffset += pathLength + contentsLength + sourcemapLength + (newFormat ? 2 : 0);
   }
@@ -180,7 +175,7 @@ export function extractBundledFiles(
   return bundledFiles;
 }
 
-export function removeBunfsRootFromPath(path: string) {
+function removeBunfsRootFromPath(path: string) {
   if (path.startsWith(BUNFS_ROOT)) {
     return path.slice(BUNFS_ROOT.length);
   }
