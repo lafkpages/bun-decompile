@@ -25,10 +25,10 @@ jobs:
         run: bun run -b multibun install --from 0.6.0
         env:
           MULTIBUN_GITHUB_TOKEN: ${{ github.token }}
-      - name: Build webapp
-        run: bun run -b build
       - name: Run tests
         run: bun run -b tests
+      - name: Build webapp
+        run: bun run -b build
       - name: Deploy to Surge
         uses: dswistowski/surge-sh-action@v.1.0.3
         with:
