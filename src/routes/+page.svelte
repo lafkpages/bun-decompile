@@ -17,8 +17,7 @@
   let bundledFiles: TBundledFile[] = [];
   $: bunVersionForRelease = bunVersion?.version.replace(/-[\w.-]+$/i, "");
 
-  let removeBunfsRoot = true;
-  let removeLeadingSlash = true;
+  let normaliseEntrypointFileName = true;
 
   let exportBundleDownloadLink: HTMLAnchorElement;
 
@@ -72,8 +71,7 @@
 
       try {
         bundledFiles = extractBundledFiles(reader.result, {
-          removeBunfsRoot,
-          removeLeadingSlash,
+          normaliseEntrypointFileName,
         });
       } catch (err) {
         console.error("Error extracting bundled files:", err);
@@ -102,13 +100,12 @@
 <br />
 <br />
 
-<label for="remove-bunfs-root">Remove Bun-fs root</label>
-<input type="checkbox" id="remove-bunfs-root" bind:checked={removeBunfsRoot} />
-
-<br />
-
-<label for="remove-leading-slash">Remove leading slash</label>
-<input type="checkbox" id="remove-leading-slash" bind:checked={removeLeadingSlash} />
+<input
+  type="checkbox"
+  id="normalise-entrypoint-file-name"
+  bind:checked={normaliseEntrypointFileName}
+/>
+<label for="normalise-entrypoint-file-name">Normalise entrypoint file name</label>
 
 <hr />
 
