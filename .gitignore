@@ -3,7 +3,7 @@
 /src/lib/tests/dummy/dummy-v*
 
 # Test reports
-/tests.html
+/static/tests.html
 
 node_modules
 

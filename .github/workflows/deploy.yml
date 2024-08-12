@@ -1,7 +1,7 @@
-name: Run unit tests
-on: [push, pull_request]
+name: Build web app, run unit tests and deploy
+on: [push]
 jobs:
-  tests:
+  deploy:
     runs-on: ubuntu-latest
     env:
       BUN_INSTALL:
@@ -16,14 +16,23 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun install -g multibun@^1.0.4
+      - name: Cache installed Bun versions
+        uses: actions/cache@v3
+        with:
+          key: multibun-${{ runner.os }}
+          path: ~/.bun/multibun
       - name: Install Bun versions from v0.6.0
         run: bun run -b multibun install --from 0.6.0
         env:
           MULTIBUN_GITHUB_TOKEN: ${{ github.token }}
+      - name: Build webapp
+        run: bun run -b build
       - name: Run tests
         run: bun run -b tests
-      - name: Archive test results
-        uses: actions/upload-artifact@v4
+      - name: Deploy to Surge
+        uses: dswistowski/surge-sh-action@v.1.0.3
         with:
-          name: tests.html
-          path: tests.html
+          domain: bun-decompile.surge.sh
+          project: build
+          login: ${{ secrets.surge_login }}
+          token: ${{ secrets.surge_token }}
