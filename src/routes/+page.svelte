@@ -15,6 +15,7 @@
 
   let bunVersion: BunVersion | null = null;
   let bundledFiles: TBundledFile[] = [];
+  $: bunVersionForRelease = bunVersion?.version.replace(/-[\w.-]+$/i, "");
 
   let removeBunfsRoot = true;
   let removeLeadingSlash = true;
@@ -116,7 +117,7 @@
 <p>
   Bun version:
   {#if bunVersion}
-    <a href="https://github.com/oven-sh/bun/releases/bun-v{bunVersion.version}">
+    <a href="https://github.com/oven-sh/bun/releases/bun-v{bunVersionForRelease}">
       <code>{bunVersion.version}</code>
     </a>
     (<a href="https://github.com/oven-sh/bun/commit/{bunVersion.revision}"
