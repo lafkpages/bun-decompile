@@ -93,7 +93,12 @@
 <button on:click={decompile} disabled={!file}>Decompile</button>
 <button on:click={exportBundle} disabled={!bundledFiles.length}>Export bundle</button>
 
-<a href="#" download="bundle.zip" bind:this={exportBundleDownloadLink}>
+<a
+  href="data:application/zip;base64,"
+  download="bundle.zip"
+  hidden
+  bind:this={exportBundleDownloadLink}
+>
   Download exported bundle
 </a>
 
@@ -149,7 +154,7 @@
 </ul>
 
 <style>
-  a[download] {
+  a[hidden] {
     display: none;
   }
 </style>
