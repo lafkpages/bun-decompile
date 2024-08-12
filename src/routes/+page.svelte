@@ -134,6 +134,10 @@
   {:else}
     unknown
   {/if}
+
+  <br />
+
+  <a href="tests.html">Bun versions compatibility</a>
 </p>
 
 <h2>Bundled files</h2>
