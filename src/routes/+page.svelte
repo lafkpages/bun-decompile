@@ -1,12 +1,15 @@
 <script lang="ts">
+  import type { File } from "@luisafk/minifs";
   import type { BunVersion, BundledFile as TBundledFile } from "$lib";
 
   import { onMount } from "svelte";
 
+  import { MiniFS } from "@luisafk/minifs";
   import JSZip from "jszip";
 
   import { extractBundledFiles, getExecutableVersion } from "$lib";
   import BundledFile from "$lib/components/BundledFile.svelte";
+  import FileTreeEntry from "$lib/components/FileTreeEntry.svelte";
 
   let files: FileList;
   $: file = files ? files[0] : null;
@@ -14,8 +17,11 @@
   let reader: FileReader;
 
   let bunVersion: BunVersion | null = null;
-  let bundledFiles: TBundledFile[] = [];
   $: bunVersionForRelease = bunVersion?.version.replace(/-[\w.-]+$/i, "");
+
+  let bundledFiles: TBundledFile[] = [];
+  let bundledFileTree: MiniFS<TBundledFile> | null = null;
+  let selectedEntry: File<TBundledFile> | null = null;
 
   let normaliseEntrypointFileName = true;
 
@@ -29,6 +35,8 @@
 
     bundledFiles.length = 0;
     bundledFiles = bundledFiles;
+    bundledFileTree = null;
+    selectedEntry = null;
 
     reader.readAsArrayBuffer(file);
   }
@@ -73,6 +81,14 @@
         bundledFiles = extractBundledFiles(reader.result, {
           normaliseEntrypointFileName,
         });
+
+        bundledFileTree = new MiniFS({ preferErrors: true });
+
+        for (const bundledFile of bundledFiles) {
+          bundledFileTree.writeFile(bundledFile.path, bundledFile);
+        }
+
+        selectedEntry = bundledFileTree.readFile(bundledFiles[0].path, { returnEntry: true });
       } catch (err) {
         console.error("Error extracting bundled files:", err);
         alert(`Error extracting bundled files:\n${err}`);
@@ -145,13 +161,28 @@
 
 <h2>Bundled files</h2>
 
-<ul>
-  {#each bundledFiles as bundledFile}
-    <li>
-      <BundledFile {bundledFile} />
-    </li>
-  {/each}
-</ul>
+{#if bundledFileTree}
+  {@const rootEntries = bundledFileTree.readDirectory([], { returnEntry: true })}
+
+  {#if rootEntries}
+    <div>
+      {#each Object.values(rootEntries.content) as entry}
+        <FileTreeEntry
+          {entry}
+          on:click={() => {
+            if (entry.isFile()) {
+              selectedEntry = entry;
+            }
+          }}
+        />
+      {/each}
+    </div>
+  {/if}
+{/if}
+
+{#if selectedEntry}
+  <BundledFile file={selectedEntry} />
+{/if}
 
 <style>
   a[hidden] {

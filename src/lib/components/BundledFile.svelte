@@ -1,43 +1,63 @@
 <script lang="ts">
+  import type { File } from "@luisafk/minifs";
+  import type { FileTypeResult } from "@sgtpooki/file-type";
   import type { BundledFile } from "$lib";
+
+  import { onDestroy } from "svelte";
 
   import { fileTypeFromBuffer } from "@sgtpooki/file-type";
 
   import CodeView from "./CodeView.svelte";
 
-  export let bundledFile: BundledFile;
-  $: fileTypePromise = fileTypeFromBuffer(bundledFile.contents).then((fileType) => {
-    if (fileType?.mime.startsWith("image/")) {
-      imageSrc = URL.createObjectURL(new Blob([bundledFile.contents], { type: fileType.mime }));
+  export let file: File<BundledFile>;
+  let fileType: FileTypeResult | null = null;
+  $: processFile(file);
+
+  async function processFile(file: File<BundledFile>) {
+    if (!file.content) {
+      return;
     }
 
-    return fileType;
-  });
+    fileType = await fileTypeFromBuffer(file.content.contents);
+
+    if (file.isFile() && file.content && fileType?.mime.startsWith("image/")) {
+      imageSrc = URL.createObjectURL(new Blob([file.content.contents], { type: fileType.mime }));
+    } else {
+      if (imageSrc) {
+        URL.revokeObjectURL(imageSrc);
+      }
+      imageSrc = null;
+    }
+  }
 
   let imageSrc: string | null = null;
 
   const decoder = new TextDecoder();
-  $: contents = decoder.decode(bundledFile.contents);
-  $: sourcemapJson = bundledFile.sourcemap ? JSON.stringify(bundledFile.sourcemap) : null;
+  $: contents = file.content ? decoder.decode(file.content.contents) : null;
+  $: sourcemapJson = file.content?.sourcemap ? JSON.stringify(file.content.sourcemap) : null;
+
+  onDestroy(() => {
+    if (imageSrc) {
+      URL.revokeObjectURL(imageSrc);
+    }
+  });
 </script>
 
 <div>
-  <h2 id="file/{bundledFile.path}">{bundledFile.path}</h2>
+  <h3 id="file/{file.content?.path}">{file.content?.path}</h3>
 
   {#if sourcemapJson}
-    <h3>Sourcemap</h3>
+    <h4>Sourcemap</h4>
     <CodeView code={sourcemapJson} language="json" format />
   {/if}
 
-  {#await fileTypePromise}
-    <p>Determining file type</p>
-  {:then fileType}
-    {#if imageSrc}
-      <img src={imageSrc} alt="Bundled file preview for {fileTypePromise}" />
-    {:else if fileType}
-      <p>File MIME: {fileType.mime}</p>
-    {:else}
-      <CodeView code={contents} />
-    {/if}
-  {/await}
+  {#if fileType}
+    <p>File MIME: {fileType.mime}</p>
+  {/if}
+
+  {#if imageSrc}
+    <img src={imageSrc} alt="Bundled file preview for {file.content?.path}" />
+  {:else if contents}
+    <CodeView code={contents} />
+  {/if}
 </div>
