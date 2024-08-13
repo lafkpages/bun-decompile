@@ -12,27 +12,35 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.1.22
-      - name: Install dependencies
-        run: |
-          bun install --frozen-lockfile
-          bun install -g multibun@^1.0.4
       - name: Cache installed Bun versions
         uses: actions/cache@v3
         with:
           key: multibun-${{ runner.os }}
           path: ~/.bun/multibun
-      - name: Install Bun versions from v0.6.0
-        run: bun run -b multibun install --from 0.6.0
-        env:
-          MULTIBUN_GITHUB_TOKEN: ${{ github.token }}
-      - name: Run tests
-        run: bun run -b tests
-      - name: Build webapp
-        run: bun run -b build
-      - name: Deploy to Surge
-        uses: dswistowski/surge-sh-action@v.1.0.3
-        with:
-          domain: bun-decompile.surge.sh
-          project: build
-          login: ${{ secrets.surge_login }}
-          token: ${{ secrets.surge_token }}
+      - name: Show debug info
+        run: |
+          ls -lath "$BUN_INSTALL"
+          ls -lath "$BUN_INSTALL/multibun"
+          ls -lath "$BUN_INSTALL/multibun/versions"
+          ls -lath "$BUN_INSTALL/multibun/cache"
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile
+          bun install -g multibun@^1.0.4
+      - name: Show installed Multibun versions
+        run: bun run -b multibun list
+      # - name: Install Bun versions from v0.6.0
+      #   run: bun run -b multibun install --from 0.6.0
+      #   env:
+      #     MULTIBUN_GITHUB_TOKEN: ${{ github.token }}
+      # - name: Run tests
+      #   run: bun run -b tests
+      # - name: Build webapp
+      #   run: bun run -b build
+      # - name: Deploy to Surge
+      #   uses: dswistowski/surge-sh-action@v.1.0.3
+      #   with:
+      #     domain: bun-decompile.surge.sh
+      #     project: build
+      #     login: ${{ secrets.surge_login }}
+      #     token: ${{ secrets.surge_token }}
