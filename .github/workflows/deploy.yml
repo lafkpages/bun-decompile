@@ -1,5 +1,13 @@
 name: Build web app, run unit tests and deploy
-on: [push]
+on:
+  push:
+    paths:
+      - "src/**"
+      - "static/**"
+      - "svelte.config.js"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - "package.json"
 jobs:
   deploy:
     runs-on: ubuntu-latest
