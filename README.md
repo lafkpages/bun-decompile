@@ -1,6 +1,7 @@
 # bun-decompile
 
 [![Build web app, run unit tests and deploy](https://github.com/lafkpages/bun-decompile/actions/workflows/deploy.yml/badge.svg)](https://github.com/lafkpages/bun-decompile/actions/workflows/deploy.yml)
+[![Wakatime](https://wakatime.com/badge/github/lafkpages/bun-decompile.svg)](https://wakatime.com/badge/github/lafkpages/bun-decompile)
 
 Extracts JavaScript sources from an executable file generated via `bun build --compile`.
 
