@@ -100,7 +100,7 @@
 <h1>bun-decompile</h1>
 
 <p>
-  Extracts JavaScript sources from an executable file generated via
+  Extracts the original transpiled sources from an executable file generated via
   <code>bun build --compile</code>.
 </p>
 
