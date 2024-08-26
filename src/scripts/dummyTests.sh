@@ -11,6 +11,6 @@ trap cleanup EXIT
 # Build the dummy script
 source ./src/scripts/buildDummy.sh
 
-# Run the dummy tests, using Bun v1.1.22
+# Run the dummy tests, using a static version of Bun
 export DUMMY_VERSION="$BUN_VERSION"
 "$BUN_INSTALL/bin/bun" test
