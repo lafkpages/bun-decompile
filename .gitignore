@@ -1,6 +1,8 @@
-# Dummy executables
+# Test executables
 /src/lib/tests/dummy/dummy
 /src/lib/tests/dummy/dummy-v*
+/src/lib/tests/selfcheck/selfcheck
+/src/lib/tests/selfcheck/selfcheck-v*
 
 # Test reports
 /static/tests.html
