@@ -14,6 +14,7 @@
 {#if entry.isDirectory()}
   <button
     class="filetree-entry"
+    style:--indent={indent}
     on:click={() => {
       open = !open;
     }}
@@ -32,7 +33,7 @@
     {/each}
   {/if}
 {:else}
-  <button class="filetree-entry" on:click>
+  <button class="filetree-entry" style:--indent={indent} on:click>
     <File />
     {entry.name}
   </button>
@@ -46,6 +47,7 @@
     align-items: center;
     gap: 4px;
     padding: 2px;
+    padding-left: calc(2px + var(--indent) * 16px);
     border: none;
     background-color: gainsboro;
     cursor: pointer;
