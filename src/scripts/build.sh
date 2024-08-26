@@ -4,6 +4,8 @@ set -eo pipefail
 outfileDummy="./src/lib/tests/dummy/dummy"
 outfileSelfcheck="./src/lib/tests/selfcheck/selfcheck"
 
+rm -rf "$outfileDummy" "$outfileSelfcheck"
+
 # Build dummy, without specifying --outfile
 # because it's broken on older versions of Bun
 bun build ./src/lib/tests/dummy/index.ts --compile --minify --sourcemap=inline
