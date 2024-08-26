@@ -14,7 +14,7 @@ export interface BundledFile {
     file: string;
     debugId?: string;
     mappings: string;
-    sources: [string];
+    sources: string[];
   };
 }
 
@@ -107,7 +107,6 @@ export function extractBundledFiles(
   const bundledFiles: BundledFile[] = [];
   let currentOffset = 0;
   for (let i = 0; i < modulesPtrLength / modulesMetadataChunkSize; i++) {
-    console.debug("Iterating bundled files, at offset", currentOffset);
     const isEntrypoint = i === entrypointId;
 
     const modulesMetadataOffset = modulesMetadataStart + i * modulesMetadataChunkSize;
@@ -132,32 +131,46 @@ export function extractBundledFiles(
     let sourcemap: BundledFile["sourcemap"];
     if (sourcemapLength) {
       const sourcemapMappingsLength = compiledBinaryData.getUint32(
-        modulesStart + currentOffset + contentsEnd + 5,
+        modulesStart + contentsEnd + 5,
         true,
       );
 
-      const sourcemapSourceLength = compiledBinaryData.getUint32(
-        modulesStart + currentOffset + contentsEnd + 13,
-        true,
-      );
+      if (sourcemapMappingsLength) {
+        const sourcemapSourcesCount = compiledBinaryData.getUint32(
+          modulesStart + contentsEnd + 1,
+          true,
+        );
 
-      const mappingsStart = contentsEnd + 25;
-      const mappingsEnd = mappingsStart + sourcemapMappingsLength;
+        const mappingsStart = contentsEnd + 9 + sourcemapSourcesCount * 16;
+        const mappingsEnd = mappingsStart + sourcemapMappingsLength;
 
-      const contentsEndData = decoder.decode(contents.slice(contents.byteLength - 49));
-      const debugId = contentsEndData.match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
-      // RegEx copied from the sourcemaps debug-id spec:
-      // https://github.com/tc39/source-map/blob/main/proposals/debug-id.md#appendix-a-self-description-of-source-maps-and-javascript-files
+        const contentsEndData = decoder.decode(contents.slice(contents.byteLength - 49));
+        const debugId = contentsEndData.match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
+        // RegEx copied from the sourcemaps debug-id spec:
+        // https://github.com/tc39/source-map/blob/main/proposals/debug-id.md#appendix-a-self-description-of-source-maps-and-javascript-files
 
-      sourcemap = {
-        version: 3,
-        file: path,
-        debugId,
-        mappings: decoder.decode(modulesData.slice(mappingsStart, mappingsEnd)),
-        sources: [
-          decoder.decode(modulesData.slice(mappingsEnd, mappingsEnd + sourcemapSourceLength)),
-        ],
-      };
+        sourcemap = {
+          version: 3,
+          file: path,
+          debugId,
+          mappings: decoder.decode(modulesData.slice(mappingsStart, mappingsEnd)),
+          sources: [],
+        };
+
+        let sourceStart = mappingsEnd;
+        for (let j = 0; j < sourcemapSourcesCount; j++) {
+          const sourcemapSourceLength = compiledBinaryData.getUint32(
+            modulesStart + contentsEnd + 13 + j * 8,
+            true,
+          );
+
+          sourcemap.sources.push(
+            decoder.decode(modulesData.slice(sourceStart, sourceStart + sourcemapSourceLength)),
+          );
+
+          sourceStart += sourcemapSourceLength;
+        }
+      }
     }
 
     const bundledFile: BundledFile = { path, contents, sourcemap };
