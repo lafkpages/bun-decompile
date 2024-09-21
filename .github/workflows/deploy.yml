@@ -29,8 +29,6 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun install -g multibun@^1.0.5
-      - name: Show installed Multibun versions
-        run: bun run -b multibun list
       - name: Install Bun versions from v0.6.0
         run: bun run -b multibun install --from 0.6.0
         env:
