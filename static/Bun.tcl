@@ -16,7 +16,7 @@ main_guard {
         move -8
         set binSize [uint32]
 
-        assert { $binSize == [len] } "Binary size trailer does not match actual file size"
+        check { $binSize == [len] }
 
         goto [len]
         move -68
