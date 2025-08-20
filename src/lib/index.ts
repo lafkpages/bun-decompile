@@ -87,67 +87,101 @@ export function extractBundledFiles(
     throw new TotalByteCountMismatchError();
   }
 
+  // Helpers for reading StringPointer pairs (offset, length)
+  const readPtr = (offset: number) => ({
+    offset: compiledBinaryData.getUint32(offset, true),
+    length: compiledBinaryData.getUint32(offset + 4, true),
+  });
+
   const entrypointId = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 44, true);
 
-  const modulesPtrOffset = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 40, true);
-  const modulesPtrLength = compiledBinaryData.getUint32(compiledBinaryData.byteLength - 36, true);
+  const modulesPtr = readPtr(compiledBinaryData.byteLength - 40);
 
   const modulesStart = getModulesStart(compiledBinaryData);
-  const modulesEnd = modulesStart + modulesPtrOffset;
+  const modulesEnd = modulesStart + modulesPtr.offset;
   const modulesData = compiledBinaryData.buffer.slice(modulesStart, modulesEnd);
 
   const modulesMetadataStart = modulesEnd;
 
-  const payloadSize =
-    compiledBinaryData.getUint32(compiledBinaryData.byteLength - 68, true) +
-    compiledBinaryData.getUint32(compiledBinaryData.byteLength - 64, true);
-  const newFormat = payloadSize + 1 === modulesPtrOffset;
-  const modulesMetadataChunkSize = newFormat ? 28 : 32;
+  const possibleChunkSizes = [120, 80, 56, 48, 40, 36, 32, 28, 24, 18, 12];
+  const modulesMetadataChunkSize =
+    possibleChunkSizes.find((sz) => modulesPtr.length % sz === 0) ??
+    (() => {
+      throw new InvalidExecutableError(
+        `Unknown modules metadata layout (length=${modulesPtr.length}).`,
+      );
+    })();
 
   const bundledFiles: BundledFile[] = [];
-  let currentOffset = 0;
-  for (let i = 0; i < modulesPtrLength / modulesMetadataChunkSize; i++) {
+
+  for (let i = 0; i <= modulesPtr.length / modulesMetadataChunkSize; i++) {
+
+     const base = modulesMetadataStart + i * modulesMetadataChunkSize;
+
+    const namePtr = readPtr(base + 0);
+    const contentsPtr = readPtr(base + 8);
+    const sourcemapPtr = readPtr(base + 16);
+
+    // Skip internal/auxiliary entries (no name)
+    if (namePtr.length === 0) {
+      continue;
+    }
+
     const isEntrypoint = i === entrypointId;
 
-    const modulesMetadataOffset = modulesMetadataStart + i * modulesMetadataChunkSize;
-    const pathLength = compiledBinaryData.getUint32(modulesMetadataOffset + 4, true);
-    const contentsLength = compiledBinaryData.getUint32(modulesMetadataOffset + 12, true);
-    const sourcemapLength = compiledBinaryData.getUint32(modulesMetadataOffset + 20, true);
+    let path = decoder.decode(
+      modulesData.slice(namePtr.offset, namePtr.offset + namePtr.length),
+    );
 
-    let path = decoder.decode(modulesData.slice(currentOffset, currentOffset + pathLength));
+    // Optional: extra guard – Bun sometimes stores helper modules without the bunfs root.
+    if (!path.includes(BUNFS_ROOT) && !path.includes(BUNFS_ROOT_OLD)) {
+      continue;
+    }
+
     if (options.normaliseEntrypointFileName && isEntrypoint) {
       path = path.replace(/\/[^\/\\]+$/, "/index.js");
     }
-    path = removeBunfsRootFromPath(path);
+
+    try {
+      path = removeBunfsRootFromPath(path);
+    } catch (e) {
+      console.log(e, path)
+      continue;
+    }
+ 
     if (path[0] !== "/") {
       throw new InvalidExecutableError("Invalid path in bundled file in executable");
     }
     path = removeLeadingSlash(path);
 
-    const contentsStart = currentOffset + pathLength + (newFormat ? 1 : 0);
-    const contentsEnd = contentsStart + contentsLength;
-    const contents = modulesData.slice(contentsStart, contentsEnd);
+    // Read contents using its recorded offset/length (binary-safe).
+    const contents = modulesData.slice(
+      contentsPtr.offset,
+      contentsPtr.offset + contentsPtr.length,
+    );
 
     let sourcemap: BundledFile["sourcemap"];
-    if (sourcemapLength) {
-      const sourcemapMappingsLength = compiledBinaryData.getUint32(
-        modulesStart + contentsEnd + 5,
-        true,
-      );
+    if (sourcemapPtr.length) {
+      // SerializedSourceMap layout:
+      // header (8 bytes: u32 source_files_count, u32 map_bytes_length)
+      // + source_files_count * StringPointer (names)
+      // + source_files_count * StringPointer (compressed contents)
+      // + map_bytes_length bytes (VLQ mappings)
+      const smHeaderOff = modulesStart + sourcemapPtr.offset;
+      const sourcesCount = compiledBinaryData.getUint32(smHeaderOff + 0, true);
+      const mapBytesLength = compiledBinaryData.getUint32(smHeaderOff + 4, true);
 
-      if (sourcemapMappingsLength) {
-        const sourcemapSourcesCount = compiledBinaryData.getUint32(
-          modulesStart + contentsEnd + 1,
-          true,
+      if (mapBytesLength) {
+        const mappingsStart = sourcemapPtr.offset + 8 + sourcesCount * 16;
+        const mappingsEnd = mappingsStart + mapBytesLength;
+
+        // Extract optional debugId from the tail of the JS/TS contents, if present.
+        const tail = contents.slice(
+          Math.max(0, (contents as ArrayBuffer).byteLength - 49),
         );
-
-        const mappingsStart = contentsEnd + 9 + sourcemapSourcesCount * 16;
-        const mappingsEnd = mappingsStart + sourcemapMappingsLength;
-
-        const contentsEndData = decoder.decode(contents.slice(contents.byteLength - 49));
-        const debugId = contentsEndData.match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
-        // RegEx copied from the sourcemaps debug-id spec:
-        // https://github.com/tc39/source-map/blob/main/proposals/debug-id.md#appendix-a-self-description-of-source-maps-and-javascript-files
+        const debugId = decoder
+          .decode(tail)
+          .match(/^\/\/# debugId=([a-fA-F0-9-]{12,})$/m)?.[1];
 
         sourcemap = {
           version: 3,
@@ -157,18 +191,16 @@ export function extractBundledFiles(
           sources: [],
         };
 
-        let sourceStart = mappingsEnd;
-        for (let j = 0; j < sourcemapSourcesCount; j++) {
-          const sourcemapSourceLength = compiledBinaryData.getUint32(
-            modulesStart + contentsEnd + 13 + j * 8,
-            true,
-          );
-
+        // Read source file names via their StringPointer array
+        for (let j = 0; j < sourcesCount; j++) {
+          const ptrBase = smHeaderOff + 8 + j * 8; // first names pointer table
+          const srcNameOffset = compiledBinaryData.getUint32(ptrBase + 0, true);
+          const srcNameLength = compiledBinaryData.getUint32(ptrBase + 4, true);
           sourcemap.sources.push(
-            decoder.decode(modulesData.slice(sourceStart, sourceStart + sourcemapSourceLength)),
+            decoder.decode(
+              modulesData.slice(srcNameOffset, srcNameOffset + srcNameLength),
+            ),
           );
-
-          sourceStart += sourcemapSourceLength;
         }
       }
     }
@@ -179,12 +211,11 @@ export function extractBundledFiles(
     } else {
       bundledFiles.push(bundledFile);
     }
-
-    currentOffset += pathLength + contentsLength + sourcemapLength + (newFormat ? 2 : 0);
   }
 
   return bundledFiles;
 }
+
 
 function getModulesStart(compiledBinaryData: DataView) {
   if (compiledBinaryData.byteLength <= 48) {
